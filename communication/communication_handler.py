@@ -42,21 +42,31 @@ class CommunicationHandler:
             print(f"[📥 CAM received by {agent.get_id()}] from {self.agent.get_id()} → Pos={cam['position']} V={cam['speed']:.2f}") 
 
 
+
     def send_message(self, message: dict):
         msg_id = message["id"]
+        if message["ttl"] <= 0:
+            return        
+
+        print(f"{self.format_agent_label(self.agent)} Send the message {msg_id[:6]} (TTL={message['ttl']}) : \"{message['content']}\"")
 
 
-        print(f"[🚗 {self.agent.get_id()}] Send the message {msg_id[:6]} (TTL={message['ttl']}) : \"{message['content']}\"")
-        if not self.current_neighbors:
-            print(f"(no neighbours nearby)")
-            return
+        forwarded = False
 
         for agent in self.current_neighbors:
+            if agent.get_id() == self.agent.get_id():
+                continue
             if msg_id in agent.communicationHandler.seen_message_ids:
                 continue
 
-            print(f"    ↳ Forwarded to {agent.unique_id} the message from {message['sender_id']}")
-            agent.receive_message(message)
+            
+            if agent.receive_message(message): 
+                print(f"    ↳ Forwarded to {self.format_agent_label(agent)} the message from {message['sender_id']}")
+                forwarded = True
+        
+        if not self.current_neighbors or not forwarded:
+            print(f"{self.format_agent_label(self.agent)} (no neighbours nearby)")
+
 
 
 
@@ -65,7 +75,7 @@ class CommunicationHandler:
         msg_id = message["id"]
 
         if msg_id in self.seen_message_ids:
-            return
+            return False
         self.seen_message_ids.add(msg_id)
         self.received_messages.append(message)
         self.last_message = message["content"]
@@ -81,8 +91,11 @@ class CommunicationHandler:
             relayed_message = message.copy()
             relayed_message["ttl"] -= 1
             self.send_message(relayed_message)
+            return True
         else:
             print(f"[🛑 {self.agent.get_id()}] TTL expired for {msg_id[:6]}")
+            return False
+
 
 
     
@@ -112,9 +125,19 @@ class CommunicationHandler:
     def get_reachable_neighbors(self) -> list:
         neighbors = []
         for agent in self.model.schedule.agents:  
+            if agent.get_id() == self.agent.get_id():
+                continue
             if (
                 isinstance(agent, VANETAgent) and agent.get_id() != self.agent.get_id()):
                 dist = get_distance(self.agent.get_position(), agent.get_position()) 
-                if dist <= self.model.communication_range: 
+                range_used = getattr(self.agent, 'communication_range', self.model.communication_range)
+                if dist <= range_used: 
                     neighbors.append(agent)
-        return neighbors
+        return neighbors        
+    
+
+    def format_agent_label(self, agent) -> str:
+        if agent.__class__.__name__ == "RSUAgent":
+            return f"🛰️ {agent.get_id()}"
+        return f"🚗 {agent.get_id()}"
+

@@ -23,4 +23,13 @@ class VANETAgent(ABC):
         raise NotImplementedError
     
     def get_id(self) -> int:
+        """
+        Get the unique identifier of the agent.
+        """
+        raise NotImplementedError
+
+    def get_speed(self) -> float:
+        """
+        Get the current speed of the agent.
+        """
         raise NotImplementedError

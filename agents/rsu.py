@@ -1,30 +1,31 @@
-from typing import List, Tuple
 import random
-from agents.car_agent import CarAgent
-from communication.communication_handler import CommunicationHandler
-from interfaces.vanetAgent import VANETAgent
-from behaviour.sir_handler import *
-
+from mesa import Agent
 from typing import TYPE_CHECKING
+from behaviour.sir_handler import SirHandler
+from interfaces.vanetAgent import VANETAgent
+from communication.communication_handler import CommunicationHandler
+
 if TYPE_CHECKING:
-    from model import TrafficSimulationModel
+    from model import RoadModel
 
 
-
-class ConnectedCarAgent(CarAgent):
-    def __init__(self, unique_id, model: "TrafficSimulationModel", path: List[Tuple[float, float]]):
-        super().__init__(unique_id, model, path)
-
+class RSUAgent(Agent, VANETAgent):
+    def __init__(self, unique_id: int, model: "RoadModel", position: tuple, communication_range : float):
+        super().__init__(unique_id, model)
+        self.position = position
         self.communicationHandler = CommunicationHandler(self, model)
-
-        # SIR
         self.sir = SirHandler(agent_id=self.unique_id)
+        self.communication_range = communication_range
 
     def get_id(self) -> int:
         return self.unique_id
-    
+
+    def get_position(self) -> tuple:
+        return self.position
+
     def send_message(self, message: dict):
-        self.communicationHandler.send_message(message)
+        self.communicationHandler.send_message(message) 
+        
 
     def receive_message(self, message: dict):
         self.communicationHandler.receive_message(message)
@@ -32,15 +33,15 @@ class ConnectedCarAgent(CarAgent):
     def send_cam(self):
         self.communicationHandler.send_cam()
 
+    def get_speed(self):
+        return 0.0
+    
+    def fake_message_received(self):
+        self.sir.infect()
+    
     def step(self):
-        super().step()
-
         self.send_cam()
 
-        self.sir.update()
-
-
-        # Send a message randomly with a 20% chance
         if random.random() < 0.2:
             message_types = [
                 ("Slowdown alert", "info"),
@@ -55,8 +56,9 @@ class ConnectedCarAgent(CarAgent):
             message = self.communicationHandler.create_message(content, msg_type)
             self.communicationHandler.send_message(message)
 
-    def fake_message_received(self):
-        self.sir.infect()
 
-# Give the VANETAgent type to the ConnectedCarAgent class. Useful for the "polymorphism".
-VANETAgent.register(ConnectedCarAgent)
+        self.sir.update()
+    
+
+
+VANETAgent.register(RSUAgent)

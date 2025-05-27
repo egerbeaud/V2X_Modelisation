@@ -1,6 +1,7 @@
 # model.py
 from mesa import Model
 from mesa.time import SimultaneousActivation
+from agents.rsu import RSUAgent
 from agents.unconnected_car_agent import UnconnectedCarAgent
 from agents.connected_car_agent import ConnectedCarAgent
 from agents.traffic_light_agent import TrafficLightAgent
@@ -100,7 +101,23 @@ class TrafficSimulationModel(Model):
             else:
                 print(f"[⚠️] Aucun segment proche pour le feu #{id} à {pos}")
 
+        # Creating RSUs
+        rsu_coords = [
+            (23.803283, 44.319399),
+            (23.802103, 44.318800)
+        ]
 
+        rsu1 = RSUAgent(unique_id=1000, model=self, position=(23.803283, 44.319399), communication_range=0.0015)
+        self.schedule.add(rsu1)
+        rsu2 = RSUAgent(unique_id=1001, model=self, position=(23.802103, 44.318800), communication_range=0.0012)
+        self.schedule.add(rsu2)
+        # for i, (lon, lat) in enumerate(rsu_coords):
+        #     rsu = RSUAgent(unique_id=1000 + i, model=self, position=(lon, lat))
+        #     self.schedule.add(rsu)
+
+
+
+        
     
 
 

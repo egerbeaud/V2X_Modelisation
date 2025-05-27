@@ -6,6 +6,8 @@ from agents.unconnected_car_agent import UnconnectedCarAgent
 from agents.connected_car_agent import ConnectedCarAgent as connected_car_agent
 from agents.traffic_light_agent import TrafficLightAgent as traffic_light_agent
 from matplotlib.lines import Line2D
+from agents.rsu import RSUAgent
+from matplotlib.patches import Circle
 
 
 # Initialise the model
@@ -43,6 +45,17 @@ def plot_step(step_num):
         elif isinstance(agent, traffic_light_agent):
             color = "red" if agent.is_red() else "green"
             ax.plot(x, y, 's', color=color, markersize=5)
+        
+        # RSU
+        if isinstance(agent, RSUAgent):
+            if agent.sir.state == SirState.INFECTED:
+                ax.plot(x, y, '*', color='red', markersize=8)
+            elif agent.sir.state == SirState.RECOVERED:
+                ax.plot(x, y, '*', color='blue', markersize=8)
+            else:
+                ax.plot(x, y, '*', color='green', markersize=8)
+
+
 
     
     ax.set_title(f"Simulation - Step {step_num}")
@@ -69,6 +82,7 @@ def plot_step(step_num):
         Line2D([0], [0], marker='o', color='w', label=f'Connecté (S) [{susceptible_count}]', markerfacecolor='green', markersize=6),
         Line2D([0], [0], marker='o', color='w', label=f'Infecté (I) [{infected_count}]', markerfacecolor='red', markersize=6),
         Line2D([0], [0], marker='o', color='w', label=f'Guéri (R) [{recovered_count}]', markerfacecolor='blue', markersize=6),
+        Line2D([0], [0], marker='*', color='w', label='RSU', markerfacecolor='purple', markersize=6),
         Line2D([0], [0], marker='o', color='w', label='Non connecté', markerfacecolor='saddlebrown', markersize=6),
         Line2D([0], [0], marker='s', color='w', label='Feu rouge', markerfacecolor='red', markersize=8),
         Line2D([0], [0], marker='s', color='w', label='Feu vert', markerfacecolor='green', markersize=8),

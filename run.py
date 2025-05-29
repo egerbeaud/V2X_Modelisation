@@ -7,11 +7,10 @@ from agents.connected_car_agent import ConnectedCarAgent as connected_car_agent
 from agents.traffic_light_agent import TrafficLightAgent as traffic_light_agent
 from matplotlib.lines import Line2D
 from agents.rsu import RSUAgent
-from matplotlib.patches import Circle
 
 
 # Initialise the model
-model = TrafficSimulationModel(shapefile_path="roads/routes.shp", num_conneted_cars=10, num_unconnected_cars=5)
+model = TrafficSimulationModel(shapefile_path="roads/routes.shp", num_conneted_cars=30, num_unconnected_cars=5)
 
 # Drawing the canva
 fig, ax = plt.subplots(figsize=(10, 10))

@@ -1,3 +1,4 @@
+import random
 from typing import List
 import uuid
 
@@ -8,6 +9,10 @@ if TYPE_CHECKING:
 from interfaces.vanetAgent import VANETAgent
 
 from utils.driving_tools import get_distance
+
+from defense.sanity import *
+from defense.reputation import *
+from defense.pheromone import *
 
 
 
@@ -34,12 +39,12 @@ class CommunicationHandler:
     def send_cam(self):
         cam = self.create_cam()
 
-        # Updates the list of neighbours
-        self.current_neighbors = self.get_reachable_neighbors() 
+        # Update the list of neighbours
+        self.current_neighbors = self.get_reachable_neighbors()
 
 
-        for agent in self.current_neighbors:
-            print(f"[📥 CAM received by {agent.get_id()}] from {self.agent.get_id()} → Pos={cam['position']} V={cam['speed']:.2f}") 
+        # for agent in self.current_neighbors:
+        #     print(f"[📥 CAM received by {agent.get_id()}] from {self.agent.get_id()} → Pos={cam['position']} V={cam['speed']:.2f}") 
 
 
 
@@ -69,21 +74,44 @@ class CommunicationHandler:
 
 
 
-
-
     def receive_message(self, message: dict):
         msg_id = message["id"]
 
         if msg_id in self.seen_message_ids:
             return False
+        
         self.seen_message_ids.add(msg_id)
         self.received_messages.append(message)
         self.last_message = message["content"]
 
+        
+        # Recup the sender agent
+        sender = self.get_agent_from_id(message["sender_id"])
+
         print(f"[📨 {self.agent.get_id()}] Received {msg_id[:6]} from {message['sender_id']} : {message['content']}")
 
-        if message["type"] == "fake":
+        if not check_reputation(self.agent,sender):
+            return False
+        
+
+        sanity = True
+        if message["sender_id"] != self.agent.get_id():
+            if not sanity_check(self,message):
+                sanity = False
+                print(f"[🚫 SanityCheck] {self.agent.get_id()} ignored message {msg_id[:6]} : {message['content']}")
+                apply_reputation_policy(sender, sanity)
+                return False
+            
+            update_pheromone(self.agent,message)
+
+            if not has_strong_pheromone(self.agent,message):
+                return False
+
+            apply_reputation_policy(sender, sanity)
+        
+        if message.get("is_fake", False):
             self.agent.fake_message_received()
+
 
         # Propagate the message to neighbors
         if message["ttl"] > 0:
@@ -98,9 +126,7 @@ class CommunicationHandler:
 
 
 
-    
-    
-    def create_message(self, content: str, msg_type: str = "info") -> dict:
+    def create_message(self, content: str, msg_type: str = "info", is_fake : bool = False) -> dict:
         msg_id = str(uuid.uuid4())
         self.seen_message_ids.add(msg_id)
 
@@ -108,7 +134,6 @@ class CommunicationHandler:
             "info": 3,
             "bsm": 1,
             "demn": 5,
-            "fake": 4
         }
         ttl = message_type_ttl.get(msg_type.lower(), 2)
 
@@ -119,7 +144,9 @@ class CommunicationHandler:
             "content": content,
             "position": self.agent.get_position(),
             "timestamp": self.model.step_count,  
-            "ttl": ttl
+            "ttl": ttl,
+            "is_fake": is_fake,
+            "pheromone": 1
         }
     
     def get_reachable_neighbors(self) -> list:
@@ -140,4 +167,19 @@ class CommunicationHandler:
         if agent.__class__.__name__ == "RSUAgent":
             return f"🛰️ {agent.get_id()}"
         return f"🚗 {agent.get_id()}"
+    
+
+    def get_agent_from_id(self, agent_id):
+        for agent in self.model.schedule.agents:
+            if agent.get_id() == agent_id:
+                return agent
+        return None
+
+    
+    
+
+
+
+
+    
 

@@ -16,9 +16,8 @@ class ConnectedCarAgent(CarAgent):
         super().__init__(unique_id, model, path)
 
         self.communicationHandler = CommunicationHandler(self, model)
-
-        # SIR
         self.sir = SirHandler(agent_id=self.unique_id)
+        self.reputation = 1.0
 
     def get_id(self) -> int:
         return self.unique_id
@@ -43,16 +42,29 @@ class ConnectedCarAgent(CarAgent):
         # Send a message randomly with a 20% chance
         if random.random() < 0.2:
             message_types = [
-                ("Slowdown alert", "info"),
-                ("Emergency braking detected", "bsm"),
-                ("Accident reported in the right-hand lane", "demn"),
-                ("Area of dense fog", "demn"),
-                ("Police radar control just after the tunnel", "fake"),
-                ("Fatal accident on the ring road", "fake"),
+                ("Accident reported ahead", "demn", False),  
+                ("Fatal accident on the ring road", "demn", True),  
+                
+                ("Road is completely free", "info", False),
+                
+                ("Heavy traffic congestion detected", "demn", False),  
+                ("Slowdown alert", "info", True),  
+                
+                ("Dense fog in the tunnel", "demn", True),
+                ("Police radar detected after the bridge", "demn", True),
             ]
 
-            content, msg_type = random.choice(message_types)
-            message = self.communicationHandler.create_message(content, msg_type)
+            choix = random.choice(message_types)  
+
+            if len(choix) == 3:
+                content = choix[0]
+                msg_type = choix[1]
+                is_fake = choix[2]
+            else:
+                content = choix[0]
+                msg_type = choix[1]
+                is_fake = False
+            message = self.communicationHandler.create_message(content, msg_type, is_fake)
             self.communicationHandler.send_message(message)
 
     def fake_message_received(self):

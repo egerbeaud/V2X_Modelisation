@@ -10,6 +10,10 @@ from agents.traffic_light_agent import TrafficLightAgent
 if TYPE_CHECKING:
     from model import TrafficSimulationModel
 
+METER_PER_EDGE = 123  # moyenne mesurée
+SECONDS_PER_STEP = 1  # un pas de simulation = 1 seconde
+
+
 
 class CarAgent(Agent, ABC):
 
@@ -19,8 +23,10 @@ class CarAgent(Agent, ABC):
         # Movement
         self.path: List[Tuple[float, float]] = path
         self.current_index: int = 0
-        self.speed: float = 1.0
+        self.speed = round(random.uniform(0.15, 0.2), 2)
         self.reached_destination: bool = False
+        self.virtual_position = 0.0  # position continue sur le path
+
 
     def get_path(self) -> List[Tuple[float, float]]:
         return self.path
@@ -34,6 +40,10 @@ class CarAgent(Agent, ABC):
     def get_id(self) -> int:
         return self.unique_id
         
+    def get_speed_kmh(self):
+        m_per_s = self.speed * METER_PER_EDGE  # ou utiliser une constante globale
+        return round(m_per_s * 3.6, 2)
+
 
 
     def assign_new_path(self):
@@ -63,8 +73,28 @@ class CarAgent(Agent, ABC):
                 attempts += 1
 
 
+
     def step(self):
-        x, y = self.get_position()
+
+        draw = random.random()
+
+        if draw < 0.05:
+            # Cas d'arrêt brutal (ex : feu, bouchon)
+            self.speed = 0.0
+            return
+        elif draw < 0.35:
+            # Ralentissement léger
+            self.speed = max(0.0, round(self.speed - random.uniform(0.01, 0.03), 3))
+        elif draw < 0.65:
+            # Accélération légère
+            self.speed = min(0.3, round(self.speed + random.uniform(0.01, 0.05), 3))
+
+
+        if self.speed == 0.0:
+            if random.random() < 0.4:
+                self.speed = round(random.uniform(0.05, 0.1), 2)
+            else:
+                return
 
         if self.current_index < len(self.path) - 1:
             current_edge = (
@@ -72,15 +102,26 @@ class CarAgent(Agent, ABC):
                 self.path[self.current_index + 1]
             )
 
-            for agent in self.model.schedule.agents:  
+            # traffic lights check
+            for agent in self.model.schedule.agents:
                 if isinstance(agent, TrafficLightAgent):
                     if current_edge in agent.controlled_edges and agent.is_red():
+                        self.speed = 0.0
                         return
 
-            self.current_index += 1
+
+            # Advance according to speed
+            self.virtual_position += self.speed
+
+            # Tant qu'on a passé un "segment" entier, on avance
+            while self.virtual_position >= 0.5 and self.current_index < len(self.path) - 1:
+                self.current_index += 1
+                self.virtual_position -= 1.0
+
         else:
             self.reached_destination = True
             self.assign_new_path()
+
 
 
     def get_position(self) -> Tuple[float, float]:

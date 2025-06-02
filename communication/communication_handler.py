@@ -37,16 +37,21 @@ class CommunicationHandler:
         }
     
     def send_cam(self):
-        cam = self.create_cam()
-
         # Update the list of neighbours
         self.current_neighbors = self.get_reachable_neighbors()
-
+        
+        cam = self.create_cam()
 
         # for agent in self.current_neighbors:
-        #     print(f"[📥 CAM received by {agent.get_id()}] from {self.agent.get_id()} → Pos={cam['position']} V={cam['speed']:.2f}") 
+        #     self.agent.receive_cam(cam)
 
 
+    def receive_cam(self, cam: dict):
+        if cam["sender_id"] == self.agent.get_id():
+            return
+        
+        print(f"[📥 CAM received by {self.agent.get_id()}] from {cam['sender_id']} → Pos={cam['position']} Speed={cam['speed']} Step={cam['step']}")
+        
 
     def send_message(self, message: dict):
         msg_id = message["id"]
@@ -75,6 +80,10 @@ class CommunicationHandler:
 
 
     def receive_message(self, message: dict):
+        if self.agent.get_id() >= 1000:
+            print(f"[🏳️‍🌈 {self.agent.get_id()}] AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+
+        
         msg_id = message["id"]
 
         if msg_id in self.seen_message_ids:
@@ -91,6 +100,10 @@ class CommunicationHandler:
         print(f"[📨 {self.agent.get_id()}] Received {msg_id[:6]} from {message['sender_id']} : {message['content']}")
 
         if not check_reputation(self.agent,sender):
+            self.model.message_rejected += 1
+            self.agent.get_sirHandler().defend_successfully()
+            print(f"[🚫 ReputationCheck] {self.agent.get_id()} ignored message {msg_id[:6]} from {sender.get_id()}")
+            self.model.defense_stats["reputation"] += 1
             return False
         
 
@@ -100,11 +113,18 @@ class CommunicationHandler:
                 sanity = False
                 print(f"[🚫 SanityCheck] {self.agent.get_id()} ignored message {msg_id[:6]} : {message['content']}")
                 apply_reputation_policy(sender, sanity)
+                self.model.message_rejected += 1
+                self.agent.get_sirHandler().defend_successfully()
+                self.model.defense_stats["sanity"] += 1
                 return False
             
             update_pheromone(self.agent,message)
 
             if not has_strong_pheromone(self.agent,message):
+                self.model.message_rejected += 1
+                print(f"[🚫 PheromoneCheck] {self.agent.get_id()} ignored message {msg_id[:6]} : {message['content']}")
+                self.agent.get_sirHandler().defend_successfully()
+                self.model.defense_stats["pheromone"] += 1
                 return False
 
             apply_reputation_policy(sender, sanity)
@@ -112,12 +132,14 @@ class CommunicationHandler:
         if message.get("is_fake", False):
             self.agent.fake_message_received()
 
+        self.model.message_accepted += 1
 
         # Propagate the message to neighbors
         if message["ttl"] > 0:
             # Create a copy of the message with decremented TTL
             relayed_message = message.copy()
             relayed_message["ttl"] -= 1
+
             self.send_message(relayed_message)
             return True
         else:
@@ -143,7 +165,8 @@ class CommunicationHandler:
             "type": msg_type,
             "content": content,
             "position": self.agent.get_position(),
-            "timestamp": self.model.step_count,  
+            "timestamp": self.model.step_count,
+            "speed": self.agent.get_speed_kmh(), 
             "ttl": ttl,
             "is_fake": is_fake,
             "pheromone": 1
@@ -154,9 +177,9 @@ class CommunicationHandler:
         for agent in self.model.schedule.agents:  
             if agent.get_id() == self.agent.get_id():
                 continue
-            if (
-                isinstance(agent, VANETAgent) and agent.get_id() != self.agent.get_id()):
-                dist = get_distance(self.agent.get_position(), agent.get_position()) 
+
+            if isinstance(agent, VANETAgent) and agent.get_id() != self.agent.get_id():
+                dist = get_distance(self.agent.get_position(), agent.get_position())
                 range_used = getattr(self.agent, 'communication_range', self.model.communication_range)
                 if dist <= range_used: 
                     neighbors.append(agent)

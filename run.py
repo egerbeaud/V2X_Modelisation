@@ -3,14 +3,15 @@ import matplotlib.pyplot as plt
 from behaviour.sir_handler import SirState
 from model import TrafficSimulationModel
 from agents.unconnected_car_agent import UnconnectedCarAgent
-from agents.connected_car_agent import ConnectedCarAgent as connected_car_agent
-from agents.traffic_light_agent import TrafficLightAgent as traffic_light_agent
+from agents.connected_car_agent import ConnectedCarAgent
+from agents.traffic_light_agent import TrafficLightAgent 
+from agents.attacker_car_agent import AttackerCarAgent
 from matplotlib.lines import Line2D
 from agents.rsu import RSUAgent
 
 
 # Initialise the model
-model = TrafficSimulationModel(shapefile_path="roads/routes.shp", num_conneted_cars=30, num_unconnected_cars=5)
+model = TrafficSimulationModel(shapefile_path="roads/routes.shp", num_connected_cars=30, num_unconnected_cars=5, num_attacker_cars=5)
 
 # Drawing the canva
 fig, ax = plt.subplots(figsize=(10, 10))
@@ -25,9 +26,12 @@ def plot_step(step_num):
     # Display all agents
     for agent in model.schedule.agents:
         x, y = agent.get_position()
+        # Attacker car
+        if isinstance(agent, AttackerCarAgent ):
+            ax.plot(x, y, 'H', color="black", markersize=6)
 
         # Connected car
-        if isinstance(agent, connected_car_agent):
+        elif isinstance(agent, ConnectedCarAgent):
             color = "green"
             if agent.sir.state == SirState.INFECTED:
                 color = "red"
@@ -40,10 +44,11 @@ def plot_step(step_num):
         elif isinstance(agent, UnconnectedCarAgent):
             ax.plot(x, y, 'o', color="saddlebrown", markersize=6)
 
+
         # Traffic light
-        elif isinstance(agent, traffic_light_agent):
+        elif isinstance(agent, TrafficLightAgent):
             color = "red" if agent.is_red() else "green"
-            ax.plot(x, y, 's', color=color, markersize=5)
+            ax.plot(x, y, 'd', color=color, markersize=5)
         
         # RSU
         if isinstance(agent, RSUAgent):
@@ -68,7 +73,7 @@ def plot_step(step_num):
     recovered_count = 0 
 
     for a in model.schedule.agents:
-        if isinstance(a, connected_car_agent):
+        if isinstance(a, ConnectedCarAgent):
             if a.sir.state == SirState.SUSCEPTIBLE:
                 susceptible_count += 1
             elif a.sir.state == SirState.INFECTED:
@@ -78,13 +83,19 @@ def plot_step(step_num):
 
     # Legend
     legend_elements = [
-        Line2D([0], [0], marker='o', color='w', label=f'Connecté (S) [{susceptible_count}]', markerfacecolor='green', markersize=6),
-        Line2D([0], [0], marker='o', color='w', label=f'Infecté (I) [{infected_count}]', markerfacecolor='red', markersize=6),
-        Line2D([0], [0], marker='o', color='w', label=f'Guéri (R) [{recovered_count}]', markerfacecolor='blue', markersize=6),
-        Line2D([0], [0], marker='*', color='w', label='RSU', markerfacecolor='purple', markersize=6),
-        Line2D([0], [0], marker='o', color='w', label='Non connecté', markerfacecolor='saddlebrown', markersize=6),
-        Line2D([0], [0], marker='s', color='w', label='Feu rouge', markerfacecolor='red', markersize=8),
-        Line2D([0], [0], marker='s', color='w', label='Feu vert', markerfacecolor='green', markersize=8),
+        Line2D([0], [0], marker='o', color='w', label=f'Connecté (S) [{susceptible_count} / {model.num_connected_cars}]', markerfacecolor='green', markersize=6),
+        Line2D([0], [0], marker='o', color='w', label=f'Infecté (I) [{infected_count} / {model.num_connected_cars}]', markerfacecolor='red', markersize=6),
+        Line2D([0], [0], marker='o', color='w', label=f'Guéri (R) [{recovered_count} / {model.num_connected_cars}]', markerfacecolor='blue', markersize=6),
+        Line2D([0], [0], marker='*', color='w', label='RSU', markerfacecolor='green', markersize=6),
+        Line2D([0], [0], marker='o', color='w', label=f'Non connecté ({model.num_unconnected_cars})', markerfacecolor='saddlebrown', markersize=6),
+        Line2D([0], [0], marker='d', color='w', label='Feu rouge', markerfacecolor='red', markersize=8),
+        Line2D([0], [0], marker='d', color='w', label='Feu vert', markerfacecolor='green', markersize=8),
+        Line2D([0], [0], marker='', color='w', label=f"✔ Acceptés : {model.message_accepted}"),
+        Line2D([0], [0], marker='', color='w', label=f"✘ Rejetés : {model.message_rejected}"),
+        Line2D([0], [0], marker='', color='w', label='Défenses efficaces :'),
+    Line2D([0], [0], marker='', color='w', label=f'↳ Sanity : {model.defense_stats["sanity"]}'),
+    Line2D([0], [0], marker='', color='w', label=f'↳ Réputation : {model.defense_stats["reputation"]}'),
+    Line2D([0], [0], marker='', color='w', label=f'↳ Phéromone : {model.defense_stats["pheromone"]}'),
     ]
 
     ax.legend(handles=legend_elements, loc='upper right')

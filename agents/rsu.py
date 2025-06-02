@@ -20,14 +20,25 @@ class RSUAgent(Agent, VANETAgent):
 
     def get_id(self) -> int:
         return self.unique_id
-
-    def get_position(self) -> tuple:
+    
+    def get_position(self) -> tuple[float, float]:
         return self.position
+    
+    def get_sirHandler(self) -> SirHandler:
+        return self.sir
+    
+    def get_reputation(self) -> float:
+        return self.reputation
+    
+    def set_reputation(self, reputation: float):
+        self.reputation = reputation
+
+    def get_communicationHandler(self) -> CommunicationHandler:
+        return self.communicationHandler
 
     def send_message(self, message: dict):
-        self.communicationHandler.send_message(message) 
+        self.communicationHandler.send_message(message)
         
-
     def receive_message(self, message: dict):
         self.communicationHandler.receive_message(message)
 
@@ -37,40 +48,14 @@ class RSUAgent(Agent, VANETAgent):
     def get_speed(self):
         return 0.0
     
+    def get_speed_kmh(self):
+        return 0.0
+    
     def fake_message_received(self):
         self.sir.infect()
     
     def step(self):
         self.send_cam()
-
-        # Send a message randomly with a 20% chance
-        if random.random() < 0.2:
-            message_types = [
-                ("Accident reported ahead", "demn", False),  
-                ("Fatal accident on the ring road", "demn", True),  
-                
-                ("Road is completely free", "info", False),
-                
-                ("Heavy traffic congestion detected", "demn", False),  
-                ("Slowdown alert", "info", False),  
-                
-                ("Dense fog in the tunnel", "demn", True),
-                ("Police radar detected after the bridge", "demn", True),
-            ]
-
-            choix = random.choice(message_types)  
-
-            if len(choix) == 3:
-                content = choix[0]
-                msg_type = choix[1]
-                is_fake = choix[2]
-            else:
-                content = choix[0]
-                msg_type = choix[1]
-                is_fake = False
-            message = self.communicationHandler.create_message(content, msg_type, is_fake)
-            self.communicationHandler.send_message(message)
-
 
         self.sir.update()
     

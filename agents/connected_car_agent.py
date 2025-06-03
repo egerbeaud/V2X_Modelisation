@@ -52,6 +52,8 @@ class ConnectedCarAgent(CarAgent):
         self.sir.update()
 
     def fake_message_received(self):
+        if self.sir.is_infected():
+            print(f"[🤒 Already infected] Agent {self.get_id()} received another fake message.")
         self.sir.infect()
 
 # Give the VANETAgent type to the ConnectedCarAgent class. Useful for the "polymorphism".

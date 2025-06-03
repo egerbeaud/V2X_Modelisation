@@ -52,3 +52,5 @@ class SirHandler:
     def get_state(self) -> SirState:
         return self.state
 
+    def is_infected(self) -> bool:
+        return self.state == SirState.INFECTED

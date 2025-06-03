@@ -100,9 +100,9 @@ class CommunicationHandler:
         print(f"[📨 {self.agent.get_id()}] Received {msg_id[:6]} from {message['sender_id']} : {message['content']}")
 
         if not check_reputation(self.agent,sender):
+            print(f"[🚫 ReputationCheck] {self.agent.get_id()} ignored message {msg_id[:6]} from {sender.get_id()}")
             self.model.message_rejected += 1
             self.agent.get_sirHandler().defend_successfully()
-            print(f"[🚫 ReputationCheck] {self.agent.get_id()} ignored message {msg_id[:6]} from {sender.get_id()}")
             self.model.defense_stats["reputation"] += 1
             return False
         
@@ -111,8 +111,8 @@ class CommunicationHandler:
         if message["sender_id"] != self.agent.get_id():
             if not sanity_check(self,message):
                 sanity = False
-                print(f"[🚫 SanityCheck] {self.agent.get_id()} ignored message {msg_id[:6]} : {message['content']}")
                 apply_reputation_policy(sender, sanity)
+                print(f"[🚫 SanityCheck] {self.agent.get_id()} ignored message {msg_id[:6]} : {message['content']}")
                 self.model.message_rejected += 1
                 self.agent.get_sirHandler().defend_successfully()
                 self.model.defense_stats["sanity"] += 1
@@ -120,17 +120,22 @@ class CommunicationHandler:
             
             update_pheromone(self.agent,message)
 
-            if not has_strong_pheromone(self.agent,message):
+            if has_strong_pheromone(self.agent, message):
+                print(f"[✅ PheromoneTrust] Agent {self.agent.get_id()} believes message {msg_id[:6]} (p={message['pheromone']})")
+
+                # Infection only if message is fake
+                if message.get("is_fake", False):
+                    self.agent.fake_message_received()
+
+                self.model.message_accepted += 1
+
+            else :
+                print(f"[🤔 Pheromone] Agent {self.agent.get_id()} forwards message {msg_id[:6]} without believing (p={message['pheromone']})")
                 self.model.message_rejected += 1
-                print(f"[🚫 PheromoneCheck] {self.agent.get_id()} ignored message {msg_id[:6]} : {message['content']}")
                 self.agent.get_sirHandler().defend_successfully()
                 self.model.defense_stats["pheromone"] += 1
-                return False
 
             apply_reputation_policy(sender, sanity)
-        
-        if message.get("is_fake", False):
-            self.agent.fake_message_received()
 
         self.model.message_accepted += 1
 
@@ -169,7 +174,7 @@ class CommunicationHandler:
             "speed": self.agent.get_speed_kmh(), 
             "ttl": ttl,
             "is_fake": is_fake,
-            "pheromone": 1
+            "pheromone": 0
         }
     
     def get_reachable_neighbors(self) -> list:

@@ -23,7 +23,7 @@ def sanity_check(handler, message):
         if msg_speed < 10:
             score += 1
         else:
-            print(f"[Sanity ❌] Pas crédible (accident) : vitesse {speed} trop élevée")
+            print(f"[Sanity ❌] Pas crédible (accident) : vitesse {msg_speed} trop élevée")
             return False
 
         if dist < 30:
@@ -51,7 +51,7 @@ def sanity_check(handler, message):
         if msg_speed < 15:
             score += 1
         else:
-            print(f"[Sanity ❌] Congestion : vitesse trop haute ({speed})")
+            print(f"[Sanity ❌] Congestion : vitesse trop haute ({msg_speed})")
             return False
 
         if dist < 40:

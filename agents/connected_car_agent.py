@@ -18,6 +18,7 @@ class ConnectedCarAgent(CarAgent):
         self.communicationHandler = CommunicationHandler(self, model)
         self.sir = SirHandler(agent_id=self.unique_id)
         self.reputation = 1.0
+        self.local_reputation : dict[int, float] = {}
 
     def get_id(self) -> int:
         return self.unique_id
@@ -44,6 +45,7 @@ class ConnectedCarAgent(CarAgent):
     def send_cam(self):
         self.communicationHandler.send_cam()
 
+
     def step(self):
         super().step()
 
@@ -55,6 +57,9 @@ class ConnectedCarAgent(CarAgent):
         if self.sir.is_infected():
             print(f"[🤒 Already infected] Agent {self.get_id()} received another fake message.")
         self.sir.infect()
+
+    def is_attacker(self):
+        return False
 
 # Give the VANETAgent type to the ConnectedCarAgent class. Useful for the "polymorphism".
 VANETAgent.register(ConnectedCarAgent)

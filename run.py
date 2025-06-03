@@ -11,7 +11,7 @@ from agents.rsu import RSUAgent
 
 
 # Initialise the model
-model = TrafficSimulationModel(shapefile_path="roads/routes.shp", num_connected_cars=30, num_unconnected_cars=5, num_attacker_cars=5)
+model = TrafficSimulationModel(shapefile_path="roads/routes.shp", num_connected_cars=10, num_unconnected_cars=5, num_attacker_cars=5)
 
 # Drawing the canva
 fig, ax = plt.subplots(figsize=(10, 10))

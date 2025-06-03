@@ -45,18 +45,21 @@ class RSUAgent(Agent, VANETAgent):
     def send_cam(self):
         self.communicationHandler.send_cam()
 
+
     def get_speed(self):
         return 0.0
     
     def get_speed_kmh(self):
         return 0.0
     
+    def is_attacker(self):
+        return False
+    
     def fake_message_received(self):
         self.sir.infect()
     
     def step(self):
         self.send_cam()
-
         self.sir.update()
     
 

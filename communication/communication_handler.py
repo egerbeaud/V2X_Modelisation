@@ -56,10 +56,13 @@ class CommunicationHandler:
     def send_message(self, message: dict):
         msg_id = message["id"]
         if message["ttl"] <= 0:
-            return        
+            return      
+          
 
         print(f"{self.format_agent_label(self.agent)} Send the message {msg_id[:6]} (TTL={message['ttl']}) : \"{message['content']}\"")
 
+        for agent in self.current_neighbors:
+            print(f"    ↳ Neighbor {self.format_agent_label(agent)} at distance {get_distance(self.agent.get_position(), agent.get_position()):.5f}m")
 
         forwarded = False
 
@@ -80,10 +83,6 @@ class CommunicationHandler:
 
 
     def receive_message(self, message: dict):
-        if self.agent.get_id() >= 1000:
-            print(f"[🏳️‍🌈 {self.agent.get_id()}] AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
-
-        
         msg_id = message["id"]
 
         if msg_id in self.seen_message_ids:
@@ -111,7 +110,7 @@ class CommunicationHandler:
         if message["sender_id"] != self.agent.get_id():
             if not sanity_check(self,message):
                 sanity = False
-                apply_reputation_policy(sender, sanity)
+                apply_reputation_policy(sender, sanity, self.agent)
                 print(f"[🚫 SanityCheck] {self.agent.get_id()} ignored message {msg_id[:6]} : {message['content']}")
                 self.model.message_rejected += 1
                 self.agent.get_sirHandler().defend_successfully()
@@ -135,7 +134,7 @@ class CommunicationHandler:
                 self.agent.get_sirHandler().defend_successfully()
                 self.model.defense_stats["pheromone"] += 1
 
-            apply_reputation_policy(sender, sanity)
+            apply_reputation_policy(sender, sanity, self.agent)
 
         self.model.message_accepted += 1
 
@@ -183,9 +182,10 @@ class CommunicationHandler:
             if agent.get_id() == self.agent.get_id():
                 continue
 
-            if isinstance(agent, VANETAgent) and agent.get_id() != self.agent.get_id():
+            if isinstance(agent, VANETAgent) and agent.get_id() != self.agent.get_id() and not agent.is_attacker():
                 dist = get_distance(self.agent.get_position(), agent.get_position())
                 range_used = getattr(self.agent, 'communication_range', self.model.communication_range)
+                # print(f"Distance entre {self.agent.get_id()} et {agent.get_id()} : {dist} (range: {range_used})")
                 if dist <= range_used: 
                     neighbors.append(agent)
         return neighbors        
@@ -194,7 +194,10 @@ class CommunicationHandler:
     def format_agent_label(self, agent) -> str:
         if agent.__class__.__name__ == "RSUAgent":
             return f"🛰️ {agent.get_id()}"
-        return f"🚗 {agent.get_id()}"
+        elif agent.__class__.__name__ == "ConnectedCarAgent":
+            return f"🚗 {agent.get_id()}"
+        elif agent.__class__.__name__ == "AttackerCarAgent":
+            return f"👿 {agent.get_id()}"
     
 
     def get_agent_from_id(self, agent_id):

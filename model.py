@@ -31,7 +31,7 @@ class TrafficSimulationModel(Model):
         self.step_count = 0
 
         #Communication
-        self.communication_range = 0.0002
+        self.communication_range = 0.0008
 
         self.num_connected_cars = num_connected_cars
         self.num_unconnected_cars = num_unconnected_cars
@@ -49,7 +49,7 @@ class TrafficSimulationModel(Model):
         # Creating RSUs
         rsu1 = RSUAgent(unique_id=1000, model=self, position=(23.803283, 44.319399), communication_range=0.0015)
         self.schedule.add(rsu1)
-        rsu2 = RSUAgent(unique_id=1001, model=self, position=(23.802103, 44.318800), communication_range=0.0012)
+        rsu2 = RSUAgent(unique_id=1001, model=self, position=(23.802103, 44.318800), communication_range=0.0015)
         self.schedule.add(rsu2)
 
         # Creating connected cars

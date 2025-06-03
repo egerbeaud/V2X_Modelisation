@@ -1,4 +1,5 @@
 from agents.connected_car_agent import ConnectedCarAgent
+from interfaces.vanetAgent import VANETAgent
 import random
 
 class AttackerCarAgent(ConnectedCarAgent):
@@ -24,3 +25,6 @@ class AttackerCarAgent(ConnectedCarAgent):
             is_fake=True
         )
         super().send_message(fake_message)
+
+    def is_attacker(self) -> str:
+        return True

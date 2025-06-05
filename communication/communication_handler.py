@@ -84,6 +84,7 @@ class CommunicationHandler:
 
     def receive_message(self, message: dict):
         msg_id = message["id"]
+        sanity = True
 
         if msg_id in self.seen_message_ids:
             return False
@@ -98,25 +99,27 @@ class CommunicationHandler:
 
         print(f"[📨 {self.agent.get_id()}] Received {msg_id[:6]} from {message['sender_id']} : {message['content']}")
 
-        if not check_reputation(self.agent,sender):
-            print(f"[🚫 ReputationCheck] {self.agent.get_id()} ignored message {msg_id[:6]} from {sender.get_id()}")
-            self.model.message_rejected += 1
-            self.agent.get_sirHandler().defend_successfully()
-            self.model.defense_stats["reputation"] += 1
-            return False
-        
-
-        sanity = True
-        if message["sender_id"] != self.agent.get_id():
-            if not sanity_check(self,message):
-                sanity = False
-                apply_reputation_policy(sender, sanity, self.agent)
-                print(f"[🚫 SanityCheck] {self.agent.get_id()} ignored message {msg_id[:6]} : {message['content']}")
+        if self.model.reputation_enabled:
+            if not check_reputation(self.agent,sender):
+                print(f"[🚫 ReputationCheck] {self.agent.get_id()} ignored message {msg_id[:6]} from {sender.get_id()}")
                 self.model.message_rejected += 1
                 self.agent.get_sirHandler().defend_successfully()
-                self.model.defense_stats["sanity"] += 1
+                self.model.defense_stats["reputation"] += 1
                 return False
+        
+        if self.model.sanity_check_enabled:
+            sanity = True
+            if message["sender_id"] != self.agent.get_id():
+                if not sanity_check(self,message):
+                    sanity = False
+                    apply_reputation_policy(sender, sanity, self.agent)
+                    print(f"[🚫 SanityCheck] {self.agent.get_id()} ignored message {msg_id[:6]} : {message['content']}")
+                    self.model.message_rejected += 1
+                    self.agent.get_sirHandler().defend_successfully()
+                    self.model.defense_stats["sanity"] += 1
+                    return False
             
+        if self.model.pheromone_enabled:
             update_pheromone(self.agent,message)
 
             if has_strong_pheromone(self.agent, message):
@@ -126,17 +129,20 @@ class CommunicationHandler:
                 if message.get("is_fake", False):
                     self.agent.fake_message_received()
 
-                self.model.message_accepted += 1
-
             else :
                 print(f"[🤔 Pheromone] Agent {self.agent.get_id()} forwards message {msg_id[:6]} without believing (p={message['pheromone']})")
                 self.model.message_rejected += 1
                 self.agent.get_sirHandler().defend_successfully()
                 self.model.defense_stats["pheromone"] += 1
 
+        if self.model.reputation_enabled:
             apply_reputation_policy(sender, sanity, self.agent)
 
-        self.model.message_accepted += 1
+        if self.model.pheromone_enabled:
+            if has_strong_pheromone(self.agent, message):
+                self.model.message_accepted += 1
+        else:
+            self.model.message_accepted += 1
 
         # Propagate the message to neighbors
         if message["ttl"] > 0:

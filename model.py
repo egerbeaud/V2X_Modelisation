@@ -12,10 +12,21 @@ from utils.map_loader import load_road_graph
 from typing import List, Tuple, cast
 import geopandas as gpd
 from utils.driving_tools import find_closest_edge
+from mesa.space import MultiGrid
 
 
 class TrafficSimulationModel(Model):
-    def __init__(self, shapefile_path, num_connected_cars=3, num_unconnected_cars=3, num_attacker_cars=3):
+    def __init__(
+        self,
+        nb_connected=30,
+        nb_unconnected=5,
+        nb_attacker=5,
+        sanity_check_enabled=True,
+        reputation_enabled=True,
+        pheromone_enabled=True,
+        steps=1000,
+        shapefile_path="roads/routes.shp"
+    ):        
         super().__init__()
 
         # Load the road graph (shapefile → graph)
@@ -31,11 +42,15 @@ class TrafficSimulationModel(Model):
         self.step_count = 0
 
         #Communication
-        self.communication_range = 0.0008
+        self.communication_range = 0.008
 
-        self.num_connected_cars = num_connected_cars
-        self.num_unconnected_cars = num_unconnected_cars
-
+        self.nb_connected = nb_connected
+        self.nb_unconnected = nb_unconnected
+        self.nb_attacker = nb_attacker
+        self.sanity_check_enabled = sanity_check_enabled
+        self.reputation_enabled = reputation_enabled
+        self.pheromone_enabled = pheromone_enabled
+        self.steps = steps
         self.message_accepted = 0
         self.message_rejected = 0
 
@@ -44,6 +59,9 @@ class TrafficSimulationModel(Model):
         "reputation": 0,
         "pheromone": 0
         }
+
+        self.grid = MultiGrid(width=100, height=100, torus=False)
+
 
 
         # Creating RSUs
@@ -56,7 +74,7 @@ class TrafficSimulationModel(Model):
         nodes = list(self.road_graph.nodes)
         created_cars = 0
         id = 0
-        while created_cars < num_connected_cars:
+        while created_cars < nb_connected:
             start = random.choice(nodes)
             end = random.choice(nodes)
             if start == end:
@@ -79,7 +97,7 @@ class TrafficSimulationModel(Model):
         
         # Creating unconnected cars
         created_cars = 0
-        while created_cars < num_unconnected_cars:
+        while created_cars < nb_unconnected:
             start = random.choice(nodes)
             end = random.choice(nodes)
             if start == end:
@@ -103,7 +121,7 @@ class TrafficSimulationModel(Model):
 
         # Creating attacker cars
         created_cars = 0
-        while created_cars < num_attacker_cars:
+        while created_cars < nb_attacker:
             start = random.choice(nodes)
             end = random.choice(nodes)
             if start == end:
@@ -139,12 +157,7 @@ class TrafficSimulationModel(Model):
                     state=random.choice(["red", "green"])
                 )
                 traffic_light.controlled_edges = [controlled_edge]
-                self.schedule.add(traffic_light)
-
-
-
-
-        
+                self.schedule.add(traffic_light)        
     
 
 
@@ -152,6 +165,12 @@ class TrafficSimulationModel(Model):
         """Fait avancer tous les agents"""
         self.step_count += 1
         self.schedule.step()
+
+def gps_to_grid(x, y, min_x=23.8000, min_y=44.3170, scale=10000):
+    gx = int((x - min_x) * scale)
+    gy = int((y - min_y) * scale)
+    return gx, gy
+
 
     
 

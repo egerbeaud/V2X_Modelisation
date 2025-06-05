@@ -9,9 +9,29 @@ from agents.attacker_car_agent import AttackerCarAgent
 from matplotlib.lines import Line2D
 from agents.rsu import RSUAgent
 
+import argparse
 
-# Initialise the model
-model = TrafficSimulationModel(shapefile_path="roads/routes.shp", num_connected_cars=10, num_unconnected_cars=5, num_attacker_cars=5)
+parser = argparse.ArgumentParser()
+parser.add_argument("--nb_connected", type=int, default=10)
+parser.add_argument("--nb_attackers", type=int, default=2)
+parser.add_argument("--nb_unconnected", type=int, default=5)
+parser.add_argument("--steps", type=int, default=100)
+parser.add_argument("--sanity", action="store_true")
+parser.add_argument("--reputation", action="store_true")
+parser.add_argument("--pheromone", action="store_true")
+args = parser.parse_args()
+
+model = TrafficSimulationModel(
+    nb_connected=args.nb_connected,
+    nb_attacker=args.nb_attackers,
+    nb_unconnected=args.nb_unconnected,
+    steps=args.steps,
+    sanity_check_enabled=args.sanity,
+    reputation_enabled=args.reputation,
+    pheromone_enabled=args.pheromone,
+    shapefile_path="roads/routes.shp"
+)
+
 
 # Drawing the canva
 fig, ax = plt.subplots(figsize=(10, 10))
@@ -73,7 +93,7 @@ def plot_step(step_num):
     recovered_count = 0 
 
     for a in model.schedule.agents:
-        if isinstance(a, ConnectedCarAgent):
+        if isinstance(a, ConnectedCarAgent) and not isinstance(a, AttackerCarAgent):
             if a.sir.state == SirState.SUSCEPTIBLE:
                 susceptible_count += 1
             elif a.sir.state == SirState.INFECTED:
@@ -83,11 +103,11 @@ def plot_step(step_num):
 
     # Legend
     legend_elements = [
-        Line2D([0], [0], marker='o', color='w', label=f'Connecté (S) [{susceptible_count} / {model.num_connected_cars}]', markerfacecolor='green', markersize=6),
-        Line2D([0], [0], marker='o', color='w', label=f'Infecté (I) [{infected_count} / {model.num_connected_cars}]', markerfacecolor='red', markersize=6),
-        Line2D([0], [0], marker='o', color='w', label=f'Guéri (R) [{recovered_count} / {model.num_connected_cars}]', markerfacecolor='blue', markersize=6),
+        Line2D([0], [0], marker='o', color='w', label=f'Connecté (S) [{susceptible_count} / {model.nb_connected}]', markerfacecolor='green', markersize=6),
+        Line2D([0], [0], marker='o', color='w', label=f'Infecté (I) [{infected_count} / {model.nb_connected}]', markerfacecolor='red', markersize=6),
+        Line2D([0], [0], marker='o', color='w', label=f'Guéri (R) [{recovered_count} / {model.nb_connected}]', markerfacecolor='blue', markersize=6),
         Line2D([0], [0], marker='*', color='w', label='RSU', markerfacecolor='green', markersize=6),
-        Line2D([0], [0], marker='o', color='w', label=f'Non connecté ({model.num_unconnected_cars})', markerfacecolor='saddlebrown', markersize=6),
+        Line2D([0], [0], marker='o', color='w', label=f'Non connecté ({model.nb_unconnected})', markerfacecolor='saddlebrown', markersize=6),
         Line2D([0], [0], marker='d', color='w', label='Feu rouge', markerfacecolor='red', markersize=8),
         Line2D([0], [0], marker='d', color='w', label='Feu vert', markerfacecolor='green', markersize=8),
         Line2D([0], [0], marker='', color='w', label=f"✔ Acceptés : {model.message_accepted}"),
@@ -100,11 +120,14 @@ def plot_step(step_num):
 
     ax.legend(handles=legend_elements, loc='upper right')
 
-# Run the simulation
-for step in range(100):
-    plot_step(step)
-    model.step()
-    plt.pause(0.4)
 
-plt.show()
+if __name__ == "__main__":
+
+    # Run the simulation
+    for step in range(100):
+        plot_step(step)
+        model.step()
+        plt.pause(0.4)
+
+    plt.show()
 

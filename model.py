@@ -41,8 +41,10 @@ class TrafficSimulationModel(Model):
         self.schedule = SimultaneousActivation(self)
         self.step_count = 0
 
+        self.message_sent = 0
+
         #Communication
-        self.communication_range = 0.008
+        self.communication_range = 0.0008
 
         self.nb_connected = nb_connected
         self.nb_unconnected = nb_unconnected
@@ -53,6 +55,8 @@ class TrafficSimulationModel(Model):
         self.steps = steps
         self.message_accepted = 0
         self.message_rejected = 0
+        self.message_forwarded_without_believing = 0
+
 
         self.defense_stats = {
         "sanity": 0,

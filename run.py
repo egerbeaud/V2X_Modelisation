@@ -10,6 +10,8 @@ from matplotlib.lines import Line2D
 from agents.rsu import RSUAgent
 
 import argparse
+from utils.results_logger import log_simulation_results
+
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--nb_connected", type=int, default=10)
@@ -103,19 +105,21 @@ def plot_step(step_num):
 
     # Legend
     legend_elements = [
-        Line2D([0], [0], marker='o', color='w', label=f'Connecté (S) [{susceptible_count} / {model.nb_connected}]', markerfacecolor='green', markersize=6),
-        Line2D([0], [0], marker='o', color='w', label=f'Infecté (I) [{infected_count} / {model.nb_connected}]', markerfacecolor='red', markersize=6),
-        Line2D([0], [0], marker='o', color='w', label=f'Guéri (R) [{recovered_count} / {model.nb_connected}]', markerfacecolor='blue', markersize=6),
-        Line2D([0], [0], marker='*', color='w', label='RSU', markerfacecolor='green', markersize=6),
-        Line2D([0], [0], marker='o', color='w', label=f'Non connecté ({model.nb_unconnected})', markerfacecolor='saddlebrown', markersize=6),
-        Line2D([0], [0], marker='d', color='w', label='Feu rouge', markerfacecolor='red', markersize=8),
-        Line2D([0], [0], marker='d', color='w', label='Feu vert', markerfacecolor='green', markersize=8),
-        Line2D([0], [0], marker='', color='w', label=f"✔ Acceptés : {model.message_accepted}"),
-        Line2D([0], [0], marker='', color='w', label=f"✘ Rejetés : {model.message_rejected}"),
-        Line2D([0], [0], marker='', color='w', label='Défenses efficaces :'),
-    Line2D([0], [0], marker='', color='w', label=f'↳ Sanity : {model.defense_stats["sanity"]}'),
-    Line2D([0], [0], marker='', color='w', label=f'↳ Réputation : {model.defense_stats["reputation"]}'),
-    Line2D([0], [0], marker='', color='w', label=f'↳ Phéromone : {model.defense_stats["pheromone"]}'),
+        Line2D([0], [0], marker='o', color='w', label=f'Susceptible (S) [{susceptible_count} / {model.nb_connected}]', markerfacecolor='green', markersize=6),
+        Line2D([0], [0], marker='o', color='w', label=f'Infected (I) [{infected_count} / {model.nb_connected}]', markerfacecolor='red', markersize=6),
+        Line2D([0], [0], marker='o', color='w', label=f'Recovered (R) [{recovered_count} / {model.nb_connected}]', markerfacecolor='blue', markersize=6),
+        Line2D([0], [0], marker='*', color='w', label='RSU', markerfacecolor='green', markersize=8),
+        Line2D([0], [0], marker='o', color='w', label=f'Unconnected ({model.nb_unconnected})', markerfacecolor='saddlebrown', markersize=6),
+        Line2D([0], [0], marker='H', color='w', label=f'Attackers ({model.nb_attacker})', markerfacecolor='black', markersize=7),
+        Line2D([0], [0], marker='d', color='w', label=f'Traffic lights (red / green)', markerfacecolor='gray', markersize=8),
+        Line2D([0], [0], marker='', color='w', label=f"✔ Accepted : {model.message_accepted}"),
+        Line2D([0], [0], marker='', color='w', label=f"✘ Refused : {model.message_rejected}"),
+        Line2D([0], [0], marker='', color='w', label=f"Forwarded without believing : {model.message_forwarded_without_believing}"),
+        Line2D([0], [0], marker='', color='w', label=f" Sent : {model.message_sent}"),
+        Line2D([0], [0], marker='', color='w', label=f'Effective defences :'),
+        Line2D([0], [0], marker='', color='w', label=f'↳ Sanity : {model.defense_stats["sanity"]}'),
+        Line2D([0], [0], marker='', color='w', label=f'↳ Reputation : {model.defense_stats["reputation"]}'),
+        Line2D([0], [0], marker='', color='w', label=f'↳ Pheromone : {model.defense_stats["pheromone"]}'),
     ]
 
     ax.legend(handles=legend_elements, loc='upper right')
@@ -124,10 +128,25 @@ def plot_step(step_num):
 if __name__ == "__main__":
 
     # Run the simulation
+    print("Starting simulation...")
     for step in range(100):
         plot_step(step)
         model.step()
         plt.pause(0.4)
 
     plt.show()
+
+    infected_count = 0
+    recovered_count = 0
+    
+    for a in model.schedule.agents:
+        if isinstance(a, ConnectedCarAgent) and not isinstance(a, AttackerCarAgent):
+            if a.sir.state == SirState.INFECTED:
+                infected_count += 1
+            elif a.sir.state == SirState.RECOVERED:
+                recovered_count += 1
+
+    log_simulation_results(model, infected_count, recovered_count)
+
+
 

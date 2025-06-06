@@ -8,35 +8,31 @@ html_form = """
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Lancer la simulation V2X</title>
+    <title>Start V2X Simulation</title>
 </head>
 <body>
-    <h2>Simulation V2X - Configuration</h2>
-    <form action="/" method="post">
-        <label>Voitures connectées : <span id="nb_connected_val">10</span></label><br>
+    <h2>V2X Simulation - Configuration</h2>
+    <form action="" method="post">
+        <label>Connected cars: <span id="nb_connected_val">10</span></label><br>
         <input type="range" name="nb_connected" min="1" max="100" value="10"
                oninput="nb_connected_val.innerText = this.value"><br><br>
 
-        <label>Voitures attaquantes : <span id="nb_attackers_val">5</span></label><br>
-        <input type="range" name="nb_attackers" min="0" max="100" value="5"
+        <label>Attacker cars: <span id="nb_attackers_val">2</span></label><br>
+        <input type="range" name="nb_attackers" min="0" max="20" value="2"
                oninput="nb_attackers_val.innerText = this.value"><br><br>
 
-        <label>Voitures non connectées : <span id="nb_unconnected_val">5</span></label><br>
+        <label>Unconnected cars: <span id="nb_unconnected_val">5</span></label><br>
         <input type="range" name="nb_unconnected" min="0" max="100" value="5"
                oninput="nb_unconnected_val.innerText = this.value"><br><br>
 
-        <label>Nombre de pas : <span id="steps_val">100</span></label><br>
+        <label>Number of steps: <span id="steps_val">100</span></label><br>
         <input type="range" name="steps" min="10" max="10000" value="100"
                oninput="steps_val.innerText = this.value"><br><br>
 
-        <label>Portée communication (en m) : <span id="comm_range_val">150</span></label><br>
-        <input type="range" name="comm_range" min="10" max="500" value="150"
-               oninput="comm_range_val.innerText = this.value"><br><br>
-
-        <label>Mécanismes de défense :</label><br>
+        <label>Defense mechanisms:</label><br>
         <input type="checkbox" name="sanity" checked/> Sanity<br>
-        <input type="checkbox" name="reputation" checked/> Réputation<br>
-        <input type="checkbox" name="pheromone" checked/> Phéromone<br><br>
+        <input type="checkbox" name="reputation" checked/> Reputation<br>
+        <input type="checkbox" name="pheromone" checked/> Pheromone<br><br>
 
         <input type="submit" name="action" value="Start">
         <input type="submit" name="action" value="Stop">

@@ -1,6 +1,4 @@
 def apply_reputation_policy(sender, sanity_ok: bool, receiver):
-    if not hasattr(sender, "reputation"):
-        return
 
     if not sanity_ok:
         if receiver.__class__.__name__ == "RSUAgent":
@@ -9,7 +7,9 @@ def apply_reputation_policy(sender, sanity_ok: bool, receiver):
             return
         else :
             update_local_reputation_of_agent(sender.get_id(),receiver, -0.1)
-            print(f"[👇 LOCAL REP - SANITY] {sender.get_id()} → {sender.reputation:.2f}")
+            local_reputation = get_local_reputation_of_agent(receiver, sender.get_id())
+            print(f"[👇 LOCAL REP - SANITY] {sender.get_id()} → {local_reputation:.2f}")
+
 
     else :
         if receiver.__class__.__name__ == "RSUAgent":
@@ -24,13 +24,13 @@ def check_reputation(receiver, sender):
     global_reputation = sender.get_reputation()
 
     if receiver.__class__.__name__ == "RSUAgent":
-        if global_reputation < 0.2:
+        if global_reputation <= 0.2:
             print(f"[👎 Global Reputation] {receiver.get_id()} ignore message from low-reputation agent {sender.get_id()}")
             return False
     else:
         local_reputation = get_local_reputation_of_agent(receiver, sender.get_id())
         reputation_used_by_car = (global_reputation + local_reputation) /2
-        if reputation_used_by_car < 0.3:
+        if reputation_used_by_car < 0.5:
             print(f"[👎 Local Reputation] {receiver.get_id()} ignore message from low-reputation agent {sender.get_id()}")
             return False
     return True

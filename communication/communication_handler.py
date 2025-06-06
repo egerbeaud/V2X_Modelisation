@@ -61,9 +61,6 @@ class CommunicationHandler:
 
         print(f"{self.format_agent_label(self.agent)} Send the message {msg_id[:6]} (TTL={message['ttl']}) : \"{message['content']}\"")
 
-        for agent in self.current_neighbors:
-            print(f"    ↳ Neighbor {self.format_agent_label(agent)} at distance {get_distance(self.agent.get_position(), agent.get_position()):.5f}m")
-
         forwarded = False
 
         for agent in self.current_neighbors:
@@ -131,7 +128,7 @@ class CommunicationHandler:
 
             else :
                 print(f"[🤔 Pheromone] Agent {self.agent.get_id()} forwards message {msg_id[:6]} without believing (p={message['pheromone']})")
-                self.model.message_rejected += 1
+                self.model.message_forwarded_without_believing += 1
                 self.agent.get_sirHandler().defend_successfully()
                 self.model.defense_stats["pheromone"] += 1
 

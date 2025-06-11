@@ -91,7 +91,7 @@ class CarAgent(Agent, ABC):
 
 
         if self.speed == 0.0:
-            if random.random() < 0.5:
+            if random.random() < 0.7:
                 self.speed = round(random.uniform(0.05, 0.1), 2)
             else:
                 return

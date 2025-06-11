@@ -13,12 +13,12 @@ html_form = """
 <body>
     <h2>V2X Simulation - Configuration</h2>
     <form action="" method="post">
-        <label>Connected cars: <span id="nb_connected_val">10</span></label><br>
-        <input type="range" name="nb_connected" min="1" max="100" value="10"
+        <label>Connected cars: <span id="nb_connected_val">30</span></label><br>
+        <input type="range" name="nb_connected" min="1" max="100" value="30"
                oninput="nb_connected_val.innerText = this.value"><br><br>
 
-        <label>Attacker cars: <span id="nb_attackers_val">2</span></label><br>
-        <input type="range" name="nb_attackers" min="0" max="20" value="2"
+        <label>Attacker cars: <span id="nb_attackers_val">3</span></label><br>
+        <input type="range" name="nb_attackers" min="0" max="20" value="3"
                oninput="nb_attackers_val.innerText = this.value"><br><br>
 
         <label>Unconnected cars: <span id="nb_unconnected_val">5</span></label><br>

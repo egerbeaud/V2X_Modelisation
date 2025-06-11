@@ -26,7 +26,7 @@ def sanity_check(handler, message):
             print(f"[Sanity ❌] Not credible (accident): speed {msg_speed} too high")
             return False
 
-        if dist < 30:
+        if dist < 30 /1000:
             score += 1
         else:
             print(f"[Sanity ❌] Not credible (accident): agent too far ({dist:.1f}m)")
@@ -34,16 +34,11 @@ def sanity_check(handler, message):
     # ------- CONTEXT 2: FOG -------
     elif "fog" in content:
         total_checks += 2
-        if dist < 25:
+        if dist < 70 / 1000:
             score += 1
         else:
             print(f"[Sanity ❌] Fog reported but agent too far ({dist:.1f}m)")
             return False
-
-        if time_diff < 5:
-            score += 1
-        else:
-            print(f"[Sanity ❌] Fog too old (Δt = {time_diff} steps)")
 
     # ------- CONTEXT 3: CONGESTION -------
     elif "congestion" in content or "slowdown" in content:
@@ -54,7 +49,7 @@ def sanity_check(handler, message):
             print(f"[Sanity ❌] Congestion: speed too high ({msg_speed})")
             return False
 
-        if dist < 40:
+        if dist < 40 / 1000:
             score += 1
         else:
             print(f"[Sanity ❌] Congestion reported but agent too far ({dist:.1f}m)")
@@ -62,11 +57,16 @@ def sanity_check(handler, message):
     # ------- CONTEXT 4: RADAR -------
     elif "radar" in content:
         total_checks += 1
-        if dist < 50:
+        if dist < 50 / 1000:
             score += 1
+
         else:
             print(f"[Sanity ❌] Radar reported too far ({dist:.1f}m)")
 
+        if msg_speed < 50:
+            score += 1
+        else:
+            print(f"[Sanity ❌] Radar: speed too high ({msg_speed})")
     # ------- GENERIC CONTEXT -------
     else:
         total_checks += 2
@@ -74,11 +74,6 @@ def sanity_check(handler, message):
             score += 1
         else:
             print(f"[Sanity ❌] Suspicious speed difference: {speed} vs {msg_speed}")
-
-        if time_diff <= 5:
-            score += 1
-        else:
-            print(f"[Sanity ❌] Message too old (Δt = {time_diff} steps)")
 
     # ------- Summary -------
     result = score >= max(1, total_checks - 1)

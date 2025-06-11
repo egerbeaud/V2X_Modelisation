@@ -122,14 +122,14 @@ def plot_step(step_num):
         Line2D([0], [0], marker='', color='w', label=f'↳ Pheromone : {model.defense_stats["pheromone"]}'),
     ]
 
-    ax.legend(handles=legend_elements, loc='upper right')
+    ax.legend(handles=legend_elements, loc='upper left')
 
 
 if __name__ == "__main__":
 
     # Run the simulation
     print("Starting simulation...")
-    for step in range(100):
+    for step in range(model.steps):
         plot_step(step)
         model.step()
         plt.pause(0.4)

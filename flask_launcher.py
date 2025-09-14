@@ -1,8 +1,13 @@
 from flask import Flask, render_template_string, request
 import subprocess
+import sys
+from pathlib import Path
 
 app = Flask(__name__)
 process = None
+ROOT = Path(__file__).resolve().parent 
+RUN  = ROOT / "run.py"                 
+
 
 html_form = """
 <!DOCTYPE html>
@@ -48,7 +53,7 @@ def index():
         action = request.form.get("action")
         if action == "Start":
             if not process:
-                args = [r"C:\\Users\\gerbe\\OneDrive\\Bureau\\evan2025\\.venv\\Scripts\\python.exe", "run.py"]
+                args = [sys.executable, str(RUN)]                
                 args += ["--nb_connected", request.form["nb_connected"]]
                 args += ["--nb_attackers", request.form["nb_attackers"]]
                 args += ["--nb_unconnected", request.form["nb_unconnected"]]

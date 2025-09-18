@@ -43,6 +43,9 @@ python -m venv venv
 ```bash
 # Linux / macOS
 source venv/bin/activate
+
+#Install Graphical backend
+sudo apt install python3-tk #(On Linux, if you haven't installed or configured a graphical backend)
 ```
 
 ```bash
